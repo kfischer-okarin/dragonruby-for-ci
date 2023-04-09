@@ -1,6 +1,8 @@
 # Dragonruby for CI
 This repository contains releases of publicly available parts of the [DragonRuby Game Toolkit](https://dragonruby.org/).
 
+It can be used for running automated tests or builds on your CI server.
+
 It is inofficial, maintained and extracted from the official zip files by me personally.
 
 ## Release contents

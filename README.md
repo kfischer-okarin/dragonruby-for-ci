@@ -1,7 +1,9 @@
 # Dragonruby for CI
-
 This repository contains releases of publicly available parts of the [DragonRuby Game Toolkit](https://dragonruby.org/).
 
+It is inofficial, maintained and extracted from the official zip files by me personally.
+
+## Release contents
 Each release contains zip files with filenames according to following pattern:
 
 `dragonruby-for-ci-<VERSION>-<LICENSE_TIER>-<PLATFORM>.zip`
@@ -21,7 +23,6 @@ Each release contains zip files with filenames according to following pattern:
   - `linux-amd64`
 
 ## Download via `curl`
-
 To download the zip file you can for example execute following commands:
 
 ```sh

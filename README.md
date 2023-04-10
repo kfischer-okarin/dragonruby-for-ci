@@ -34,3 +34,14 @@ export DR_PLATFORM=windows-amd64
 
 curl -L -O https://github.com/kfischer-okarin/dragonruby-for-ci/releases/download/$DR_VERSION/dragonruby-for-ci-$DR_VERSION-$DR_LICENSE_TIER-$DR_PLATFORM.zip
 ```
+
+## Running DragonRuby tests on CI (without a display)
+
+```sh
+# This assumes your game is in the `mygame` directory and contains a file `mygame/tests.rb` containing your tests.
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./dragonruby --test tests.rb
+# This assumes your gameid inside metadata/game_metadata.txt is set to "mygamename"
+# This grep call is a workaround to make CI jobs fail properly since DragonRuby does not return an error exit code
+# when the tests fail
+grep '\[Game\] 0 test(s) failed.' logs/mygamename.log
+```

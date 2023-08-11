@@ -39,10 +39,65 @@ curl -L -O https://github.com/kfischer-okarin/dragonruby-for-ci/releases/downloa
 
 ```sh
 # This assumes your game is in the `mygame` directory and contains a file `mygame/tests.rb`
-# containing your tests.
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./dragonruby mygame --test tests.rb
-# This assumes your gameid inside metadata/game_metadata.txt is set to "mygamename"
+# containing your tests. It will save the test output in logs/tests.log
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./dragonruby mygame --test tests.rb | tee tests.log
 # This grep call is a workaround to make CI jobs fail properly since DragonRuby does not return an
 # error exit code when the tests fail
-grep '\[Game\] 0 test(s) failed.' logs/mygamename.log
+grep '\[Game\] 0 test(s) failed.' tests.log
+```
+
+## Example Github Actions Configuration
+
+Put following file into the folder `.github/workflows/` in your repository
+(filename can be anything you like as long it has the `yml` extension).
+
+```yml
+name: Test
+
+on:
+  push:
+
+jobs:
+  test:
+    strategy:
+      matrix: # This matrix will run 18 jobs (3 versions x 2 tiers x 3 platforms)
+        # Remove the configurations you don't need
+        dr_version:
+          - '4.7'
+          - '5.0'
+          - '5.4'
+        dr_license_tier:
+          - standard
+          - pro
+        runner:
+          - windows-2022
+          - macos-12
+          - ubuntu-22.04
+        include:
+          - runner: windows-2022
+            dr_platform: windows-amd64
+          - runner: macos-12
+            dr_platform: macos
+          - runner: ubuntu-22.04
+            dr_platform: linux-amd64
+      fail-fast: false
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download dragonruby
+        run: |
+          curl -L -o dragonruby.zip https://github.com/kfischer-okarin/dragonruby-for-ci/releases/download/${{ matrix.dr_version }}/dragonruby-for-ci-${{ matrix.dr_version }}-${{ matrix.dr_license_tier }}-${{ matrix.dr_platform }}.zip
+          unzip dragonruby.zip
+          chmod u+x ./dragonruby
+      - name: Run tests
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: |
+          # See "Running DragonRuby tests on CI (without a display)" in README.md for further explanations
+          ./dragonruby mygame --test tests.rb | tee tests.log
+          grep '\[Game\] 0 test(s) failed.' tests.log
 ```

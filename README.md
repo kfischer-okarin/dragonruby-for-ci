@@ -39,7 +39,7 @@ curl -L -O https://github.com/kfischer-okarin/dragonruby-for-ci/releases/downloa
 
 ```sh
 # This assumes your game is in the `mygame` directory and contains a file `mygame/tests.rb`
-# containing your tests. It will save the test output in logs/tests.log
+# containing your tests. It will save the test output in tests.log
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./dragonruby mygame --test tests.rb | tee tests.log
 # This grep call is a workaround to make CI jobs fail properly since DragonRuby does not return an
 # error exit code when the tests fail

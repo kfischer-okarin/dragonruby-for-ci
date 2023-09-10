@@ -251,7 +251,7 @@ def download_page_url
 end
 
 def download_key
-  ENV['DRAGONRUBY_ITCH_IO_DOWNLOAD_KEY']
+  ENV['ITCH_IO_DRAGONRUBY_DOWNLOAD_KEY']
 end
 
 def download_file_with_progress(url, output_filename)

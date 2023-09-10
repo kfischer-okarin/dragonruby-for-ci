@@ -29,20 +29,7 @@ def main
 
   setup_verbose_logging if options[:verbose]
 
-  browser = ItchIoBrowser.new(
-    username: ENV['ITCH_IO_USERNAME'],
-    password: ENV['ITCH_IO_PASSWORD'],
-    download_key: ENV['ITCH_IO_DRAGONRUBY_DOWNLOAD_KEY']
-  )
-  current_page = browser.visit_download_page
-  if current_page == :login
-    current_page = browser.login
-    browser.handle_two_factor_auth if current_page == :two_factor_auth
-  end
-
-  ['dragonruby-gtk-windows-amd64.zip', 'dragonruby-gtk-macos.zip', 'dragonruby-gtk-linux-amd64.zip'].each do |filename|
-    browser.download_upload(browser.uploads[filename], output_folder)
-  end
+  download_standard_version(output_folder)
 end
 
 def parse_options
@@ -65,6 +52,23 @@ def setup_verbose_logging
   LOGGER.formatter = proc do |severity, datetime, _progname, msg|
     redact_values!(msg, ENV['ITCH_IO_PASSWORD'])
     "#{datetime.strftime('%Y-%m-%d %H:%M:%S,%L')} #{severity} - #{msg}\n"
+  end
+end
+
+def download_standard_version(output_folder)
+  browser = ItchIoBrowser.new(
+    username: ENV['ITCH_IO_USERNAME'],
+    password: ENV['ITCH_IO_PASSWORD'],
+    download_key: ENV['ITCH_IO_DRAGONRUBY_DOWNLOAD_KEY']
+  )
+  current_page = browser.visit_download_page
+  if current_page == :login
+    current_page = browser.login
+    browser.handle_two_factor_auth if current_page == :two_factor_auth
+  end
+
+  ['dragonruby-gtk-windows-amd64.zip', 'dragonruby-gtk-macos.zip', 'dragonruby-gtk-linux-amd64.zip'].each do |filename|
+    browser.download_upload(browser.uploads[filename], output_folder)
   end
 end
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'logger'
+require 'optparse'
 require 'uri'
 
 require_relative 'vendor/bundle/bundler/setup'
@@ -14,14 +15,18 @@ def redact_values!(message, *secret_values)
 end
 
 LOGGER = Logger.new(STDOUT)
-LOGGER.formatter = proc do |severity, datetime, _progname, msg|
+LOGGER.level = Logger::INFO
+LOGGER.formatter = proc do |_severity, _datetime, _progname, msg|
   redact_values!(msg, ENV['ITCH_IO_PASSWORD'])
-  "#{datetime.strftime('%Y-%m-%d %H:%M:%S,%L')} #{severity} - #{msg}\n"
+  "#{msg}\n"
 end
 
 def main
-  output_folder = ARGV.shift || '.'
-  raise 'No output folder given' unless output_folder
+  options = parse_options
+
+  output_folder = ARGV.shift || './downloads'
+
+  setup_verbose_logging if options[:verbose]
 
   browser = ItchIoBrowser.new(
     username: ENV['ITCH_IO_USERNAME'],
@@ -35,6 +40,29 @@ def main
 
   ['dragonruby-gtk-windows-amd64.zip', 'dragonruby-gtk-macos.zip', 'dragonruby-gtk-linux-amd64.zip'].each do |filename|
     browser.download_upload(browser.uploads[filename], download_key, output_folder)
+  end
+end
+
+def parse_options
+  result = {}
+
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$PROGRAM_NAME} [options] [output_folder]"
+
+    opts.on('-v', '--verbose', 'Run verbosely') do |v|
+      result[:verbose] = v
+    end
+  end
+  parser.parse!
+
+  result
+end
+
+def setup_verbose_logging
+  LOGGER.level = Logger::DEBUG
+  LOGGER.formatter = proc do |severity, datetime, _progname, msg|
+    redact_values!(msg, ENV['ITCH_IO_PASSWORD'])
+    "#{datetime.strftime('%Y-%m-%d %H:%M:%S,%L')} #{severity} - #{msg}\n"
   end
 end
 
@@ -77,7 +105,7 @@ class ItchIoBrowser
   end
 
   def login
-    LOGGER.debug 'Logging in'
+    LOGGER.info "Logging in as #{@username}..."
     post_form(
       @current_url,
       body: {
@@ -90,7 +118,6 @@ class ItchIoBrowser
   end
 
   def handle_two_factor_auth
-    LOGGER.debug 'Handling two factor auth'
     print "Enter the code from your authenticator app: "
     verification_code = gets.chomp
     post_form(
@@ -115,10 +142,12 @@ class ItchIoBrowser
         filename: filename
       }
     end
+    LOGGER.debug "Found uploads #{result}"
     result
   end
 
   def download_upload(upload, download_key, output_folder)
+    LOGGER.info "Downloading #{upload[:filename]}..."
     response = post_form(
       "https://dragonruby.itch.io/dragonruby-gtk/file/#{upload[:upload_id]}",
       body: {
@@ -137,6 +166,7 @@ class ItchIoBrowser
   private
 
   def post_form(url, body:, **options)
+    LOGGER.debug "Posting to #{url} with #{body}"
     handle_redirect do
       self.class.post(
         url,

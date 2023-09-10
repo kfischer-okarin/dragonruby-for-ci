@@ -6,6 +6,7 @@ require 'uri'
 
 require_relative 'vendor/bundle/bundler/setup'
 require 'httparty'
+require 'progress_bar'
 
 
 def redact_values!(message, *secret_values)
@@ -257,6 +258,7 @@ def download_file_with_progress(url, output_filename)
   total_bytes = HTTParty.head(url).headers['content-length'].to_i
   downloaded_bytes = 0
   percent_complete = 0
+  bar = ProgressBar.new
   LOGGER.debug "Downloading from #{url}"
   File.open(output_filename, 'wb') do |file|
     HTTParty.get(url, stream_body: true) do |fragment|
@@ -265,7 +267,7 @@ def download_file_with_progress(url, output_filename)
       new_percent_complete = (downloaded_bytes * 100 / total_bytes).to_i
       if new_percent_complete != percent_complete
         percent_complete = new_percent_complete
-        LOGGER.info "Downloaded #{percent_complete}%"
+        bar.increment!
       end
     end
   end

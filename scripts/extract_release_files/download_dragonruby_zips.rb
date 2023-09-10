@@ -31,16 +31,17 @@ def main
 
   browser = ItchIoBrowser.new(
     username: ENV['ITCH_IO_USERNAME'],
-    password: ENV['ITCH_IO_PASSWORD']
+    password: ENV['ITCH_IO_PASSWORD'],
+    download_key: ENV['ITCH_IO_DRAGONRUBY_DOWNLOAD_KEY']
   )
-  current_page = browser.visit download_page_url
+  current_page = browser.visit_download_page
   if current_page == :login
     current_page = browser.login
     browser.handle_two_factor_auth if current_page == :two_factor_auth
   end
 
   ['dragonruby-gtk-windows-amd64.zip', 'dragonruby-gtk-macos.zip', 'dragonruby-gtk-linux-amd64.zip'].each do |filename|
-    browser.download_upload(browser.uploads[filename], download_key, output_folder)
+    browser.download_upload(browser.uploads[filename], output_folder)
   end
 end
 
@@ -70,9 +71,10 @@ end
 class ItchIoBrowser
   include HTTParty
 
-  def initialize(username:, password:)
+  def initialize(username:, password:, download_key:)
     @username = username
     @password = password
+    @download_key = download_key
     @current_url = nil
     @last_response = nil
     @cookies = load_cookies
@@ -93,6 +95,10 @@ class ItchIoBrowser
 
   def html
     @last_response.parsed_response
+  end
+
+  def visit_download_page
+    visit download_page_url
   end
 
   def visit(url)
@@ -147,7 +153,7 @@ class ItchIoBrowser
     result
   end
 
-  def download_upload(upload, download_key, output_folder)
+  def download_upload(upload, output_folder)
     LOGGER.info "Downloading #{upload[:filename]}..."
     response = post_form(
       "https://dragonruby.itch.io/dragonruby-gtk/file/#{upload[:upload_id]}",
@@ -155,7 +161,7 @@ class ItchIoBrowser
         csrf_token: csrf_token
       },
       query: {
-        key: download_key,
+        key: @download_key,
         source: 'game_download'
       }
     )
@@ -244,14 +250,10 @@ class ItchIoBrowser
     File.write('cookies.txt', @cookies.to_cookie_string)
     LOGGER.debug "All Stored cookies #{@cookies}"
   end
-end
 
-def download_page_url
-  "https://dragonruby.itch.io/dragonruby-gtk/download/#{download_key}"
-end
-
-def download_key
-  ENV['ITCH_IO_DRAGONRUBY_DOWNLOAD_KEY']
+  def download_page_url
+    "https://dragonruby.itch.io/dragonruby-gtk/download/#{@download_key}"
+  end
 end
 
 def download_file_with_progress(url, output_filename)

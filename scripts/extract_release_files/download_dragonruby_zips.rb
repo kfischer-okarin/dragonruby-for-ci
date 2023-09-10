@@ -159,8 +159,7 @@ class ItchIoBrowser
       }
     )
     download_url = response.parsed_response['url']
-    download_response = self.class.get(download_url)
-    File.write(File.join(output_folder, upload[:filename]), download_response.body)
+    download_file_with_progress(download_url, File.join(output_folder, upload[:filename]))
   end
 
   private
@@ -252,6 +251,24 @@ end
 
 def download_key
   ENV['DRAGONRUBY_ITCH_IO_DOWNLOAD_KEY']
+end
+
+def download_file_with_progress(url, output_filename)
+  total_bytes = HTTParty.head(url).headers['content-length'].to_i
+  downloaded_bytes = 0
+  percent_complete = 0
+  LOGGER.debug "Downloading from #{url}"
+  File.open(output_filename, 'wb') do |file|
+    HTTParty.get(url, stream_body: true) do |fragment|
+      file.write(fragment)
+      downloaded_bytes += fragment.length
+      new_percent_complete = (downloaded_bytes * 100 / total_bytes).to_i
+      if new_percent_complete != percent_complete
+        percent_complete = new_percent_complete
+        LOGGER.info "Downloaded #{percent_complete}%"
+      end
+    end
+  end
 end
 
 main if $PROGRAM_NAME == __FILE__

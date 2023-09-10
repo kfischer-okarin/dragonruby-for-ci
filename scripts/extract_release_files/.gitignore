@@ -1,3 +1,13 @@
+# Bundler
 Gemfile.lock
 vendor
 .bundle
+
+# Emacs
+*~
+
+# Downloaded Dragonruby archives
+downloads/*
+
+# Stored itch.io cookies
+cookies.txt

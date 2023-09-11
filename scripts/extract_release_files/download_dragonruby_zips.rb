@@ -31,6 +31,7 @@ def main
   setup_verbose_logging if options[:verbose]
 
   download_standard_version(output_folder)
+  download_pro_version(output_folder)
 end
 
 def parse_options
@@ -260,6 +261,32 @@ class ItchIoBrowser
     "https://dragonruby.itch.io/dragonruby-gtk/download/#{@download_key}"
   end
 end
+
+def download_pro_version(output_folder)
+  download_links_json = HTTParty.get('https://dragonruby.org/api').parsed_response
+  LOGGER.debug "Download links #{download_links_json}"
+
+  ['pro_windows', 'pro_mac', 'pro_linux'].each do |platform|
+    get_download_url_url = download_links_json['__links__']['download'][platform]
+    download_url = HTTParty.get(
+      get_download_url_url,
+      basic_auth: {
+        username: ENV['DRAGONRUBY_PRO_USERNAME'],
+        password: ENV['DRAGONRUBY_PRO_PASSWORD']
+      }
+    ).body
+    download_file_with_progress(
+      download_url,
+      File.join(output_folder, File.basename(PRO_FILENAMES[platform])),
+    )
+  end
+end
+
+PRO_FILENAMES = {
+  'pro_windows' => 'dragonruby-pro-windows-amd64.zip',
+  'pro_mac' => 'dragonruby-pro-macos.zip',
+  'pro_linux' => 'dragonruby-pro-linux-amd64.zip'
+}.freeze
 
 def download_file_with_progress(url, output_filename)
   uri = URI(url)

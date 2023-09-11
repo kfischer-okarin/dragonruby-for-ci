@@ -25,10 +25,9 @@ end
 
 def main
   options = parse_options
-
   output_folder = ARGV.shift || './downloads'
-
   setup_verbose_logging if options[:verbose]
+  check_environment_variables
 
   download_standard_version(output_folder)
   download_pro_version(output_folder)
@@ -55,6 +54,23 @@ def setup_verbose_logging
     redact_values!(msg, ENV['ITCH_IO_PASSWORD'])
     "#{datetime.strftime('%Y-%m-%d %H:%M:%S,%L')} #{severity} - #{msg}\n"
   end
+end
+
+def check_environment_variables
+  required_environment_variables = [
+    'ITCH_IO_USERNAME',
+    'ITCH_IO_PASSWORD',
+    'ITCH_IO_DRAGONRUBY_DOWNLOAD_KEY',
+    'DRAGONRUBY_PRO_USERNAME',
+    'DRAGONRUBY_PRO_PASSWORD'
+  ]
+  missing_environment_variables = required_environment_variables.reject { |required_environment_variable|
+    ENV[required_environment_variable]
+  }
+  return if missing_environment_variables.empty?
+
+  LOGGER.error "Missing environment variables #{missing_environment_variables}"
+  exit 1
 end
 
 def download_standard_version(output_folder)

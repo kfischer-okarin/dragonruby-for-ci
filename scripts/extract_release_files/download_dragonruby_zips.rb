@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'logger'
+require 'net/http'
 require 'optparse'
 require 'uri'
 
@@ -261,19 +262,24 @@ class ItchIoBrowser
 end
 
 def download_file_with_progress(url, output_filename)
-  total_bytes = HTTParty.head(url).headers['content-length'].to_i
-  downloaded_bytes = 0
-  percent_complete = 0
-  bar = ProgressBar.new
-  LOGGER.debug "Downloading from #{url}"
-  File.open(output_filename, 'wb') do |file|
-    HTTParty.get(url, stream_body: true) do |fragment|
-      file.write(fragment)
-      downloaded_bytes += fragment.length
-      new_percent_complete = (downloaded_bytes * 100 / total_bytes).to_i
-      if new_percent_complete != percent_complete
-        percent_complete = new_percent_complete
-        bar.increment!
+  uri = URI(url)
+  Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+    http.request_get(uri) do |response|
+      total_bytes = response.content_length
+      downloaded_bytes = 0
+      percent_complete = 0
+      bar = ProgressBar.new
+      LOGGER.debug "Downloading to #{output_filename} from #{url}"
+      File.open(output_filename, 'wb') do |file|
+        response.read_body do |fragment|
+          file.write(fragment)
+          downloaded_bytes += fragment.length
+          new_percent_complete = (downloaded_bytes * 100 / total_bytes).to_i
+          if new_percent_complete != percent_complete
+            percent_complete = new_percent_complete
+            bar.increment!
+          end
+        end
       end
     end
   end

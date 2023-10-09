@@ -29,8 +29,11 @@ def main
   setup_verbose_logging if options[:verbose]
   check_environment_variables
 
-  download_standard_version(output_folder)
-  download_pro_version(output_folder)
+  standard_download_threads = download_standard_version(output_folder)
+  pro_download_threads = download_pro_version(output_folder)
+
+  standard_download_threads.each(&:join)
+  pro_download_threads.each(&:join)
 end
 
 def parse_options
@@ -85,9 +88,13 @@ def download_standard_version(output_folder)
     browser.handle_two_factor_auth if current_page == :two_factor_auth
   end
 
+  threads = []
   ['dragonruby-gtk-windows-amd64.zip', 'dragonruby-gtk-macos.zip', 'dragonruby-gtk-linux-amd64.zip'].each do |filename|
-    browser.download_upload(browser.uploads[filename], output_folder)
+    threads << Thread.start do
+      browser.download_upload(browser.uploads[filename], output_folder)
+    end
   end
+  threads
 end
 
 class ItchIoBrowser
@@ -282,6 +289,7 @@ def download_pro_version(output_folder)
   download_links_json = HTTParty.get('https://dragonruby.org/api').parsed_response
   LOGGER.debug "Download links #{download_links_json}"
 
+  threads = []
   ['pro_windows', 'pro_mac', 'pro_linux'].each do |platform|
     get_download_url_url = download_links_json['__links__']['download'][platform]
     download_url = HTTParty.get(
@@ -291,11 +299,16 @@ def download_pro_version(output_folder)
         password: ENV['DRAGONRUBY_PRO_PASSWORD']
       }
     ).body
-    download_file_with_progress(
-      download_url,
-      File.join(output_folder, File.basename(PRO_FILENAMES[platform])),
-    )
+    threads << Thread.start do
+      filename = PRO_FILENAMES[platform]
+      LOGGER.info "Downloading #{filename}..."
+      download_file_with_progress(
+        download_url,
+        File.join(output_folder, File.basename(filename))
+      )
+    end
   end
+  threads
 end
 
 PRO_FILENAMES = {

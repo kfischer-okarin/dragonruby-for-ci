@@ -62,7 +62,7 @@ def upload_release_asset(github_release, file)
   puts "Uploading #{filename}..."
   upload_url = github_release['upload_url'].gsub('{?name,label}', '')
   response = DragonRubyForCiRepository.post(
-    "#{upload_url}?name=#{name}",
+    "#{upload_url}?name=#{filename}",
     body: File.read(file),
     headers: {
       'Content-Type' => 'application/zip'

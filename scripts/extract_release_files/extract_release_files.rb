@@ -5,8 +5,7 @@ require 'pathname'
 require 'zip'
 
 def main
-  folder = ARGV.shift
-  raise 'No folder given' unless folder
+  folder = ARGV.shift || './downloads'
 
   folder = Pathname(folder)
   %w[windows-amd64 macos linux-amd64].each do |platform|

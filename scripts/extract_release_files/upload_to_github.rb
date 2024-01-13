@@ -29,26 +29,15 @@ def read_release(input_folder)
 end
 
 def get_or_create_github_release(version)
-  response = DragonRubyForCiRepository.get("/releases/tags/#{version}")
-  if response.code == 200
+  release = DragonRubyForCiRepository.try_get_release(version)
+  if release
     puts 'Release already exists'
-    return JSON.parse(response.body)
+    return release
   end
 
-  response = DragonRubyForCiRepository.post(
-    '/releases',
-    body: {
-      tag_name: version,
-      name: version,
-    }.to_json
-  )
-
-  if response.code == 201
-    puts 'Release created'
-    return JSON.parse(response.body)
-  end
-
-  raise "Failed to create release: #{response.code} #{response.body}"
+  release = DragonRubyForCiRepository.create_release(version)
+  puts 'Release created'
+  release
 end
 
 def upload_release_assets(github_release, files)
@@ -87,6 +76,27 @@ class DragonRubyForCiRepository
   headers 'Accept' => 'application/vnd.github+json',
           'Authorization' => "Bearer #{ENV['GITHUB_TOKEN']}",
           'X-GitHub-Api-Version' => '2022-11-28'
+
+  class << self
+    def try_get_release(version)
+      response = get("/releases/tags/#{version}")
+      return JSON.parse(response.body) if response.code == 200
+    end
+
+    def create_release(version)
+      response = post(
+        '/releases',
+        body: {
+          tag_name: version,
+          name: version
+        }.to_json
+      )
+
+      raise "Failed to create release: #{response.code} #{response.body}" unless response.code == 201
+
+      JSON.parse(response.body)
+    end
+  end
 end
 
 main if $PROGRAM_NAME == __FILE__

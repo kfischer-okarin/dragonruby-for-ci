@@ -8,6 +8,9 @@ def main
   folder = ARGV.shift || './downloads'
 
   folder = Pathname(folder)
+
+  DragonrubyZip.clean_folder(folder)
+
   zips = %w[windows-amd64 macos linux-amd64].flat_map { |platform|
     [
       DragonrubyZip.new(folder / "dragonruby-gtk-#{platform}.zip"),
@@ -23,7 +26,13 @@ def main
 end
 
 class DragonrubyZip
+  OUTPUT_PREFIX = 'dragonruby-for-ci'.freeze
+
   attr_reader :platform, :version
+
+  def self.clean_folder(folder)
+    folder.glob("#{OUTPUT_PREFIX}-*.zip").each(&:delete)
+  end
 
   def initialize(filename)
     @zip = Zip::File.open(filename)
@@ -32,7 +41,7 @@ class DragonrubyZip
   end
 
   def extract_ci_zip(target_dir)
-    target_zip_name = File.join(target_dir, "dragonruby-for-ci-#{@version}-#{@license_type}-#{@platform}.zip")
+    target_zip_name = File.join(target_dir, "#{OUTPUT_PREFIX}-#{@version}-#{@license_type}-#{@platform}.zip")
     Zip::File.open(target_zip_name, Zip::File::CREATE) do |zip_file|
       entries_to_copy = [
         "dragonruby-#{@platform}/#{binary_filename}",

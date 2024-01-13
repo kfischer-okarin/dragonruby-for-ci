@@ -87,7 +87,7 @@ class DragonRubyForCiRepository
 
     def upload_release_asset(upload_url, file)
       filename = File.basename(file)
-      post(
+      response = post(
         "#{upload_url}?name=#{filename}",
         body: File.read(file),
         headers: {

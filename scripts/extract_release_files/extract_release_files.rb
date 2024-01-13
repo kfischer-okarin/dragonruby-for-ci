@@ -35,6 +35,7 @@ class DragonrubyZip
   end
 
   def initialize(filename)
+    puts "Reading #{filename}..."
     @zip = Zip::File.open(filename)
     determine_platform
     determine_version

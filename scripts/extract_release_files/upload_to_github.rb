@@ -41,33 +41,21 @@ def get_or_create_github_release(version)
 end
 
 def upload_release_assets(github_release, files)
+  upload_url = github_release['upload_url'].gsub('{?name,label}', '')
   threads = []
   files.each do |file|
     threads << Thread.new do
-      upload_release_asset(github_release, file)
+      upload_release_asset(upload_url, file)
     end
   end
   threads.each(&:join)
 end
 
-def upload_release_asset(github_release, file)
+def upload_release_asset(upload_url, file)
   filename = File.basename(file)
   puts "Uploading #{filename}..."
-  upload_url = github_release['upload_url'].gsub('{?name,label}', '')
-  response = DragonRubyForCiRepository.post(
-    "#{upload_url}?name=#{filename}",
-    body: File.read(file),
-    headers: {
-      'Content-Type' => 'application/zip'
-    }
-  )
-
-  if response.code == 201
-    puts "Uploaded #{filename} successfully"
-    return JSON.parse(response.body)
-  end
-
-  raise "Failed to upload release asset: #{response.code} #{response.body}"
+  DragonRubyForCiRepository.upload_release_asset(upload_url, file)
+  puts "Uploaded #{filename} successfully"
 end
 
 class DragonRubyForCiRepository
@@ -93,6 +81,21 @@ class DragonRubyForCiRepository
       )
 
       raise "Failed to create release: #{response.code} #{response.body}" unless response.code == 201
+
+      JSON.parse(response.body)
+    end
+
+    def upload_release_asset(upload_url, file)
+      filename = File.basename(file)
+      post(
+        "#{upload_url}?name=#{filename}",
+        body: File.read(file),
+        headers: {
+          'Content-Type' => 'application/zip'
+        }
+      )
+
+      raise "Failed to upload release asset: #{response.code} #{response.body}" unless response.code == 201
 
       JSON.parse(response.body)
     end

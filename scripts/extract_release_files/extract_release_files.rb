@@ -18,10 +18,12 @@ def main
   zips.each do |zip|
     zip.extract_ci_zip(folder)
   end
+
+  output_version_to_file(folder, zips)
 end
 
 class DragonrubyZip
-  attr_reader :platform
+  attr_reader :platform, :version
 
   def initialize(filename)
     @zip = Zip::File.open(filename)
@@ -84,6 +86,11 @@ class DragonrubyZip
       'dragonruby'
     end
   end
+end
+
+def output_version_to_file(folder, zips)
+  version = zips.first.version
+  File.write(folder / '.version', version)
 end
 
 main if $PROGRAM_NAME == __FILE__

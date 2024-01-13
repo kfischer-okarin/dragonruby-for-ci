@@ -30,9 +30,9 @@ def main
   check_environment_variables
 
   standard_download_threads = download_standard_version(output_folder)
-  pro_download_threads = download_pro_version(output_folder)
-
   standard_download_threads.each(&:join)
+
+  pro_download_threads = download_pro_version(output_folder)
   pro_download_threads.each(&:join)
 end
 

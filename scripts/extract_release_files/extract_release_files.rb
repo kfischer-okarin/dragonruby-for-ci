@@ -8,11 +8,14 @@ def main
   folder = ARGV.shift || './downloads'
 
   folder = Pathname(folder)
-  %w[windows-amd64 macos linux-amd64].each do |platform|
-    zip = DragonrubyZip.new(folder / "dragonruby-gtk-#{platform}.zip")
-    zip.extract_ci_zip(folder)
+  zips = %w[windows-amd64 macos linux-amd64].flat_map { |platform|
+    [
+      DragonrubyZip.new(folder / "dragonruby-gtk-#{platform}.zip"),
+      DragonrubyZip.new(folder / "dragonruby-pro-#{platform}.zip")
+    ]
+  }
 
-    zip = DragonrubyZip.new(folder / "dragonruby-pro-#{platform}.zip")
+  zips.each do |zip|
     zip.extract_ci_zip(folder)
   end
 end

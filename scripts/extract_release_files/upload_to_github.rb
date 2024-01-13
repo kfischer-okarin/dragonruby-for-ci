@@ -12,13 +12,7 @@ def main
 
   github_release = get_or_create_github_release(release[:version])
 
-  threads = []
-  release[:files].each do |file|
-    threads << Thread.new do
-      upload_release_asset(github_release, file)
-    end
-  end
-  threads.each(&:join)
+  upload_release_assets(github_release, release[:files])
 end
 
 def read_release(input_folder)
@@ -55,6 +49,16 @@ def get_or_create_github_release(version)
   end
 
   raise "Failed to create release: #{response.code} #{response.body}"
+end
+
+def upload_release_assets(github_release, files)
+  threads = []
+  files.each do |file|
+    threads << Thread.new do
+      upload_release_asset(github_release, file)
+    end
+  end
+  threads.each(&:join)
 end
 
 def upload_release_asset(github_release, file)

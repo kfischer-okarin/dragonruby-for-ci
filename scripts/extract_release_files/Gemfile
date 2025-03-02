@@ -2,5 +2,6 @@ source 'https://rubygems.org'
 
 gem 'httparty', '~> 0.21.0'
 gem 'rubyzip', '~> 2.3'
-
 gem "progress_bar", "~> 1.3"
+# For Ruby >= 3.4 support since csv is not included in the standard library anymore
+gem "csv", "~> 3.3"
